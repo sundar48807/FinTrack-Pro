@@ -1,0 +1,119 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "familyId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "createdAt"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Income or Expense record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "familyId": { "type": "string" },
+        "type": { "type": "string", "enum": ["income", "expense"] },
+        "amount": { "type": "number" },
+        "category": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "source": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "type", "amount", "category", "date", "createdAt"]
+    },
+    "Budget": {
+      "title": "Budget",
+      "description": "Monthly budget for a category",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "familyId": { "type": "string" },
+        "category": { "type": "string" },
+        "amount": { "type": "number" },
+        "month": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "category", "amount", "month", "createdAt"]
+    },
+    "SavingsGoal": {
+      "title": "Savings Goal",
+      "description": "User savings goal",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "familyId": { "type": "string" },
+        "name": { "type": "string" },
+        "targetAmount": { "type": "number" },
+        "savedAmount": { "type": "number" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "targetAmount", "savedAmount", "createdAt"]
+    },
+    "Investment": {
+      "title": "Investment",
+      "description": "User investment tracking",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "familyId": { "type": "string" },
+        "symbol": { "type": "string" },
+        "type": { "type": "string" },
+        "amount": { "type": "number" },
+        "purchasePrice": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "symbol", "type", "amount", "purchasePrice", "createdAt"]
+    },
+    "Subscription": {
+      "title": "Subscription",
+      "description": "Recurring subscription",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "familyId": { "type": "string" },
+        "name": { "type": "string" },
+        "amount": { "type": "number" },
+        "billingCycle": { "type": "string", "enum": ["monthly", "yearly"] },
+        "nextBillingDate": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "amount", "billingCycle", "nextBillingDate", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    },
+    "/transactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/Transaction" },
+      "description": "Income and expenses"
+    },
+    "/budgets/{budgetId}": {
+      "schema": { "$ref": "#/entities/Budget" },
+      "description": "Monthly budgets"
+    },
+    "/savingsGoals/{goalId}": {
+      "schema": { "$ref": "#/entities/SavingsGoal" },
+      "description": "Savings goals"
+    },
+    "/investments/{investmentId}": {
+      "schema": { "$ref": "#/entities/Investment" },
+      "description": "Investments"
+    },
+    "/subscriptions/{subId}": {
+      "schema": { "$ref": "#/entities/Subscription" },
+      "description": "Subscriptions"
+    }
+  }
+}

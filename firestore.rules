@@ -1,0 +1,152 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    function uidNotModified() {
+      return !('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidUser(data) {
+      return hasRequiredFields(['email', 'createdAt']) &&
+             data.email is string &&
+             data.createdAt is timestamp &&
+             (!('displayName' in data) || data.displayName == null || data.displayName is string) &&
+             (!('mobileNumber' in data) || data.mobileNumber == null || data.mobileNumber is string) &&
+             (!('familyId' in data) || data.familyId == null || data.familyId is string);
+    }
+
+    function isValidTransaction(data) {
+      return hasRequiredFields(['userId', 'type', 'amount', 'category', 'date', 'createdAt']) &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.type in ['income', 'expense'] &&
+             data.amount is number &&
+             data.category is string &&
+             data.date is string &&
+             data.createdAt is timestamp &&
+             (!('notes' in data) || data.notes == null || data.notes is string) &&
+             (!('paymentMethod' in data) || data.paymentMethod == null || data.paymentMethod is string) &&
+             (!('source' in data) || data.source == null || data.source is string) &&
+             (!('familyId' in data) || data.familyId == null || data.familyId is string) &&
+             (!('workspace' in data) || data.workspace == null || data.workspace is string);
+    }
+
+    function isValidBudget(data) {
+      return hasRequiredFields(['userId', 'category', 'amount', 'month', 'createdAt']) &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.category is string &&
+             data.amount is number &&
+             data.month is string &&
+             data.createdAt is timestamp &&
+             (!('familyId' in data) || data.familyId == null || data.familyId is string) &&
+             (!('workspace' in data) || data.workspace == null || data.workspace is string);
+    }
+
+    function isValidSavingsGoal(data) {
+      return hasRequiredFields(['userId', 'name', 'targetAmount', 'savedAmount', 'createdAt']) &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.name is string &&
+             data.targetAmount is number &&
+             data.savedAmount is number &&
+             data.createdAt is timestamp &&
+             (!('deadline' in data) || data.deadline == null || data.deadline is string) &&
+             (!('familyId' in data) || data.familyId == null || data.familyId is string) &&
+             (!('workspace' in data) || data.workspace == null || data.workspace is string);
+    }
+
+    function isValidInvestment(data) {
+      return hasRequiredFields(['userId', 'symbol', 'type', 'amount', 'purchasePrice', 'createdAt']) &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.symbol is string &&
+             data.type is string &&
+             data.amount is number &&
+             data.purchasePrice is number &&
+             data.createdAt is timestamp &&
+             (!('familyId' in data) || data.familyId == null || data.familyId is string) &&
+             (!('workspace' in data) || data.workspace == null || data.workspace is string);
+    }
+
+    function isValidSubscription(data) {
+      return hasRequiredFields(['userId', 'name', 'amount', 'billingCycle', 'nextBillingDate', 'createdAt']) &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.name is string &&
+             data.amount is number &&
+             data.billingCycle in ['monthly', 'yearly'] &&
+             data.nextBillingDate is string &&
+             data.createdAt is timestamp &&
+             (!('familyId' in data) || data.familyId == null || data.familyId is string) &&
+             (!('workspace' in data) || data.workspace == null || data.workspace is string);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && areImmutableFieldsUnchanged(['createdAt', 'email']);
+      allow delete: if isOwner(userId);
+    }
+
+    match /transactions/{transactionId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidTransaction(request.resource.data);
+      allow update: if isDocOwner() && isValidTransaction(request.resource.data) && uidNotModified() && areImmutableFieldsUnchanged(['createdAt', 'userId']);
+      allow delete: if isDocOwner();
+    }
+
+    match /budgets/{budgetId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidBudget(request.resource.data);
+      allow update: if isDocOwner() && isValidBudget(request.resource.data) && uidNotModified() && areImmutableFieldsUnchanged(['createdAt', 'userId']);
+      allow delete: if isDocOwner();
+    }
+
+    match /savingsGoals/{goalId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidSavingsGoal(request.resource.data);
+      allow update: if isDocOwner() && isValidSavingsGoal(request.resource.data) && uidNotModified() && areImmutableFieldsUnchanged(['createdAt', 'userId']);
+      allow delete: if isDocOwner();
+    }
+
+    match /investments/{investmentId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidInvestment(request.resource.data);
+      allow update: if isDocOwner() && isValidInvestment(request.resource.data) && uidNotModified() && areImmutableFieldsUnchanged(['createdAt', 'userId']);
+      allow delete: if isDocOwner();
+    }
+
+    match /subscriptions/{subId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidSubscription(request.resource.data);
+      allow update: if isDocOwner() && isValidSubscription(request.resource.data) && uidNotModified() && areImmutableFieldsUnchanged(['createdAt', 'userId']);
+      allow delete: if isDocOwner();
+    }
+  }
+}

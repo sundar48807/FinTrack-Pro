@@ -1,0 +1,5 @@
+{
+  "name": "FinTrack Pro",
+  "description": "A full-stack AI-powered Personal Finance Manager to track income, expenses, budgets, savings goals, and investments with AI-powered financial insights.",
+  "requestFramePermissions": ["microphone", "camera"]
+}
