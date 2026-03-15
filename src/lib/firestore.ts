@@ -30,30 +30,18 @@ export interface Transaction {
 
 export const addTransaction = async (transaction: Omit<Transaction, 'id' | 'createdAt'>) => {
   try {
-
-    // remove undefined fields
-    const cleanTransaction: any = {};
-
-    Object.keys(transaction).forEach((key) => {
-      const value = (transaction as any)[key];
-      if (value !== undefined && value !== "") {
-        cleanTransaction[key] = value;
-      }
-    });
-
-    const docRef = await addDoc(collection(db, "transactions"), {
-      ...cleanTransaction,
-      workspace: cleanTransaction.workspace || "personal",
+    const docRef = await addDoc(collection(db, 'transactions'), {
+      ...transaction,
+      workspace: transaction.workspace || 'personal',
       createdAt: serverTimestamp()
     });
-
     return docRef.id;
-
   } catch (error) {
     console.error("Error adding transaction: ", error);
     throw error;
   }
 };
+
 export const updateTransaction = async (id: string, data: Partial<Transaction>) => {
   try {
     const docRef = doc(db, 'transactions', id);
@@ -161,29 +149,16 @@ export interface Investment {
   createdAt: any;
 }
 
-export const addTransaction = async (transaction: Omit<Transaction, 'id' | 'createdAt'>) => {
+export const addInvestment = async (investment: Omit<Investment, 'id' | 'createdAt'>) => {
   try {
-
-    // remove undefined fields
-    const cleanTransaction: any = {};
-
-    Object.keys(transaction).forEach((key) => {
-      const value = (transaction as any)[key];
-      if (value !== undefined && value !== "") {
-        cleanTransaction[key] = value;
-      }
-    });
-
-    const docRef = await addDoc(collection(db, "transactions"), {
-      ...cleanTransaction,
-      workspace: cleanTransaction.workspace || "personal",
+    const docRef = await addDoc(collection(db, 'investments'), {
+      ...investment,
+      workspace: investment.workspace || 'personal',
       createdAt: serverTimestamp()
     });
-
     return docRef.id;
-
   } catch (error) {
-    console.error("Error adding transaction: ", error);
+    console.error("Error adding investment: ", error);
     throw error;
   }
 };

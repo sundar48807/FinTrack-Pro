@@ -78,14 +78,9 @@ export default function Transactions() {
         notes: formData.notes,
         paymentMethod: formData.paymentMethod,
         tags: formData.tags.split(',').map(t => t.trim()).filter(t => t),
-        workspace
-      };
-
-      if (workspace === "family" && formData.familyMember){
-        transactionData.familyMember = formData.familyMember;
-      }
-      await addTransaction(transactionData);
-      
+        workspace,
+        familyMember: workspace === 'family' ? formData.familyMember : undefined
+      });
       setFormData({ ...formData, amount: '', notes: '', tags: '' });
     } catch (error) {
       console.error(error);
