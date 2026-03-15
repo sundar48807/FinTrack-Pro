@@ -64,8 +64,7 @@ export const deleteTransaction = async (id: string) => {
 export const subscribeToTransactions = (userId: string, workspace: 'personal' | 'family', callback: (transactions: Transaction[]) => void) => {
   const q = query(
     collection(db, 'transactions'),
-    where('userId', '==', userId),
-    orderBy('date', 'desc')
+    where('userId', '==', userId)
   );
 
   return onSnapshot(q, (snapshot) => {
@@ -77,6 +76,14 @@ export const subscribeToTransactions = (userId: string, workspace: 'personal' | 
         transactions.push({ id: doc.id, ...data } as Transaction);
       }
     });
+    
+    // Sort client-side to avoid requiring a composite index
+    transactions.sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
+    });
+    
     callback(transactions);
   }, (error) => {
     console.error("Error fetching transactions: ", error);
@@ -119,8 +126,7 @@ export const deleteBudget = async (id: string) => {
 export const subscribeToBudgets = (userId: string, workspace: 'personal' | 'family', callback: (budgets: Budget[]) => void) => {
   const q = query(
     collection(db, 'budgets'),
-    where('userId', '==', userId),
-    orderBy('createdAt', 'desc')
+    where('userId', '==', userId)
   );
 
   return onSnapshot(q, (snapshot) => {
@@ -132,6 +138,14 @@ export const subscribeToBudgets = (userId: string, workspace: 'personal' | 'fami
         budgets.push({ id: doc.id, ...data } as Budget);
       }
     });
+
+    // Sort client-side to avoid requiring a composite index
+    budgets.sort((a, b) => {
+      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return timeB - timeA;
+    });
+
     callback(budgets);
   }, (error) => {
     console.error("Error fetching budgets: ", error);
@@ -175,8 +189,7 @@ export const deleteInvestment = async (id: string) => {
 export const subscribeToInvestments = (userId: string, workspace: 'personal' | 'family', callback: (investments: Investment[]) => void) => {
   const q = query(
     collection(db, 'investments'),
-    where('userId', '==', userId),
-    orderBy('createdAt', 'desc')
+    where('userId', '==', userId)
   );
 
   return onSnapshot(q, (snapshot) => {
@@ -188,6 +201,14 @@ export const subscribeToInvestments = (userId: string, workspace: 'personal' | '
         investments.push({ id: doc.id, ...data } as Investment);
       }
     });
+
+    // Sort client-side to avoid requiring a composite index
+    investments.sort((a, b) => {
+      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return timeB - timeA;
+    });
+
     callback(investments);
   }, (error) => {
     console.error("Error fetching investments: ", error);
@@ -231,8 +252,7 @@ export const deleteSubscription = async (id: string) => {
 export const subscribeToSubscriptions = (userId: string, workspace: 'personal' | 'family', callback: (subscriptions: Subscription[]) => void) => {
   const q = query(
     collection(db, 'subscriptions'),
-    where('userId', '==', userId),
-    orderBy('nextBillingDate', 'asc')
+    where('userId', '==', userId)
   );
 
   return onSnapshot(q, (snapshot) => {
@@ -244,6 +264,14 @@ export const subscribeToSubscriptions = (userId: string, workspace: 'personal' |
         subscriptions.push({ id: doc.id, ...data } as Subscription);
       }
     });
+
+    // Sort client-side to avoid requiring a composite index
+    subscriptions.sort((a, b) => {
+      const dateA = new Date(a.nextBillingDate).getTime();
+      const dateB = new Date(b.nextBillingDate).getTime();
+      return (isNaN(dateA) ? 0 : dateA) - (isNaN(dateB) ? 0 : dateB);
+    });
+
     callback(subscriptions);
   }, (error) => {
     console.error("Error fetching subscriptions: ", error);

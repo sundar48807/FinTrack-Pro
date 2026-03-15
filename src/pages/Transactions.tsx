@@ -45,9 +45,12 @@ export default function Transactions() {
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (data.familyMembers && Array.isArray(data.familyMembers)) {
-          setFamilyMembers(data.familyMembers);
-          if (data.familyMembers.length > 0 && !formData.familyMember) {
-            setFormData(prev => ({ ...prev, familyMember: data.familyMembers[0] }));
+          const parsedMembers = data.familyMembers.map((m: any) => 
+            typeof m === 'string' ? m : m.name
+          );
+          setFamilyMembers(parsedMembers);
+          if (parsedMembers.length > 0 && !formData.familyMember) {
+            setFormData(prev => ({ ...prev, familyMember: parsedMembers[0] }));
           }
         }
       }
@@ -89,12 +92,13 @@ export default function Transactions() {
   };
 
   const handleVoiceInput = () => {
-    if (!('webkitSpeechRecognition' in window)) {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
       alert("Speech recognition is not supported in this browser.");
       return;
     }
 
-    const recognition = new (window as any).webkitSpeechRecognition();
+    const recognition = new SpeechRecognition();
     recognition.continuous = false;
     recognition.interimResults = false;
 
@@ -148,13 +152,25 @@ export default function Transactions() {
         const parsed = await parseReceiptImage(base64, file.type);
         
         if (parsed.amount && parsed.category) {
+          let parsedDate = formData.date;
+          if (parsed.date) {
+            try {
+              const d = new Date(parsed.date);
+              if (!isNaN(d.getTime())) {
+                parsedDate = d.toISOString().split('T')[0];
+              }
+            } catch (e) {
+              console.error("Invalid date from receipt:", parsed.date);
+            }
+          }
+
           setFormData({
             ...formData,
             type: 'expense',
             amount: parsed.amount.toString(),
             category: parsed.category,
             notes: parsed.merchant || 'Receipt scan',
-            date: parsed.date ? new Date(parsed.date).toISOString().split('T')[0] : formData.date
+            date: parsedDate
           });
         }
       } catch (error) {
@@ -173,13 +189,25 @@ export default function Transactions() {
     try {
       const parsed = await parseBankSMS(smsText);
       if (parsed.amount && parsed.category && parsed.type) {
+        let parsedDate = formData.date;
+        if (parsed.date) {
+          try {
+            const d = new Date(parsed.date);
+            if (!isNaN(d.getTime())) {
+              parsedDate = d.toISOString().split('T')[0];
+            }
+          } catch (e) {
+            console.error("Invalid date from SMS:", parsed.date);
+          }
+        }
+
         setFormData({
           ...formData,
           type: parsed.type,
           amount: parsed.amount.toString(),
           category: parsed.category,
           notes: parsed.notes || 'SMS Auto-detected',
-          date: parsed.date ? new Date(parsed.date).toISOString().split('T')[0] : formData.date
+          date: parsedDate
         });
         setShowSMSInput(false);
         setSmsText('');
@@ -431,7 +459,13 @@ export default function Transactions() {
                     <div>
                       <p className="font-medium text-slate-900">{t.category}</p>
                       <p className="text-xs text-slate-500">
-                        {format(new Date(t.date), 'MMM d, yyyy')} {t.notes && `• ${t.notes}`}
+                        {t.date ? (() => {
+                          try {
+                            return format(new Date(t.date), 'MMM d, yyyy');
+                          } catch (e) {
+                            return t.date;
+                          }
+                        })() : 'Unknown Date'} {t.notes && `• ${t.notes}`}
                       </p>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {t.paymentMethod && (
@@ -459,7 +493,7 @@ export default function Transactions() {
                     <span className={`font-semibold ${
                       t.type === 'income' ? 'text-emerald-600' : 'text-slate-900'
                     }`}>
-                      {t.type === 'income' ? '+' : '-'}₹{t.amount.toLocaleString()}
+                      {t.type === 'income' ? '+' : '-'}₹{(t.amount || 0).toLocaleString()}
                     </span>
                     <button 
                       onClick={() => t.id && deleteTransaction(t.id)}
